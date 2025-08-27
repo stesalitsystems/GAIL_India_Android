@@ -6,17 +6,18 @@ import 'package:gail_india/utils/theme/custom_themes/elevated_button_theme.dart'
 import 'package:gail_india/utils/theme/custom_themes/outlined_button_theme.dart';
 import 'package:gail_india/utils/theme/custom_themes/text_theme.dart';
 import 'package:gail_india/utils/theme/custom_themes/textfield_theme.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class GAppTheme {
   GAppTheme._();
 
   static ThemeData lightTheme = ThemeData(
     useMaterial3: true,
-    fontFamily: 'Poppins',
     brightness: Brightness.light,
-    primaryColor: Color(0xFFffd94f), // Example primary color
+    primaryColor: Color(0xFFffd94f),
     scaffoldBackgroundColor: Colors.white,
-    textTheme: GTextTheme.lightTextTheme,
+    fontFamily: GoogleFonts.openSans().fontFamily,
+    textTheme: GoogleFonts.openSansTextTheme(GTextTheme.lightTextTheme),
     appBarTheme: GAppbarTheme.lightAppBarTheme,
     chipTheme: GChipTheme.lightChipTheme,
     bottomSheetTheme: GBottomSheetTheme.lightBottomSheetTheme,
@@ -26,11 +27,11 @@ class GAppTheme {
   );
   static ThemeData darkTheme = ThemeData(
     useMaterial3: true,
-    fontFamily: 'Poppins',
-    brightness: Brightness.light,
+    brightness: Brightness.dark,
     primaryColor: Colors.blue,
     scaffoldBackgroundColor: Colors.black,
-    textTheme: GTextTheme.darkTextTheme,
+    fontFamily: GoogleFonts.openSans().fontFamily,
+    textTheme: GoogleFonts.openSansTextTheme(GTextTheme.darkTextTheme),
     appBarTheme: GAppbarTheme.darkAppBarTheme,
     chipTheme: GChipTheme.darkChipTheme,
     bottomSheetTheme: GBottomSheetTheme.darkBottomSheetTheme,

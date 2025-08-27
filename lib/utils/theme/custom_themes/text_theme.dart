@@ -1,3 +1,5 @@
+// style: Theme.of(context).textTheme.headlineMedium),
+
 import 'package:flutter/material.dart';
 
 class GTextTheme {

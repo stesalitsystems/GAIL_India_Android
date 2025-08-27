@@ -1,65 +1,105 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:gail_india/utils/constants/sizes.dart';
+import 'package:go_router/go_router.dart';
+import 'package:lottie/lottie.dart';
 import '../controllers/splash_controller.dart';
 
-class SplashScreen extends StatelessWidget {
-  const SplashScreen({super.key});
+class SplashGate extends StatefulWidget {
+  const SplashGate({super.key});
+
+  @override
+  State<SplashGate> createState() => _SplashGateState();
+}
+
+class _SplashGateState extends State<SplashGate> {
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    // Start once
+    _timer = Timer(const Duration(seconds: 3), () {
+      if (!mounted) return;
+      context.go('/login');
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final SplashController splashController = SplashController();
-    splashController.startSplashTimer(context);
+    // final SplashController splashController = SplashController();
+    // splashController.startSplashTimer(context);
 
     return Scaffold(
       backgroundColor: Theme.of(context).primaryColor,
-      body: Column(
-        children: [
-          SizedBox(
-            height: MediaQuery.of(context).size.height * 0.35,
-          ), // Adjust for AppBar height
-          Center(
-            child: Image.asset(
-              'assets/logos/GAIL.png', // Ensure this path matches your asset structure
-              width: 150, // Adjust size as needed
-              height: 150,
+      body: SafeArea(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween, // key part
+          children: [
+            // Top empty space
+            const SizedBox(height: 40),
+
+            // Center content (CNG tanker + Loader)
+            Column(
+              children: [
+                Center(
+                  child: Image.asset(
+                    'assets/vehicle/cng_tanker.png',
+                    width: 300,
+                    height: 300,
+                  ),
+                ),
+                // const SizedBox(height: 20),
+                // Lottie.asset(
+                //   'assets/lottie/loading_dots.json',
+                //   width: 100,
+                //   height: 100,
+                // ),
+              ],
             ),
-          ),
-          Text(
-            'Gas Authority of India Ltd.',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: const Color.fromARGB(255, 0, 0, 0),
-            ),
-          ),
-          SizedBox(height: 5),
-          Text(
-            'Fleet Management System.',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.normal,
-              color: const Color.fromARGB(255, 0, 0, 0),
-            ),
-          ),
-        ],
-      ),
-      bottomNavigationBar: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.only(bottom: 12.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: const [
-              Text(
-                'Version 1.0.0',
-                style: TextStyle(fontSize: 12, color: Colors.black),
+
+            // Bottom content (Logo + Texts)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 40), // move away from edge
+              child: Column(
+                children: [
+                  Image.asset('assets/logos/GAIL.png', width: 100, height: 100),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Delivering Natural Gas',
+                    style: TextStyle(
+                      fontSize: Gsizes.fontLg,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                  ),
+                  Text(
+                    'Round the Clock,',
+                    style: TextStyle(
+                      fontSize: Gsizes.fontLg,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                  ),
+                  Text(
+                    'Across the Nation',
+                    style: TextStyle(
+                      fontSize: Gsizes.fontLg,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                  ),
+                ],
               ),
-              SizedBox(height: 4),
-              Text(
-                '© 2025 Gail India Limited',
-                style: TextStyle(fontSize: 12, color: Colors.black),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

@@ -11,18 +11,22 @@ environment:
 # Flutter dependencies
 dependencies:
   cupertino_icons: ^1.0.8
+  dio: ^5.9.0
   dropdown_button2: ^2.3.9
   flutter:
     sdk: flutter
   flutter_map: ^8.2.1
+  flutter_riverpod: ^2.6.1
+  flutter_secure_storage: ^9.2.4
   geolocator: ^14.0.2
   get: ^4.7.2
   get_storage: ^2.1.1
+  go_router: ^16.1.0
+  google_fonts: ^6.3.0
   http: ^1.4.0
-  iconsax: ^0.0.8
   intl: ^0.20.2
   logger: ^2.6.0
-  smooth_page_indicator: ^1.2.1
+  lottie: ^3.3.1
   url_launcher: ^6.3.2
 
 # Development dependencies
@@ -37,6 +41,9 @@ flutter:
   #assets:
   assets:
     - assets/logos/
+    - assets/icons/
+    - assets/vehicle/
+    - assets/lottie/
   # fonts:
   #   - family: Schyler
   #     fonts:
