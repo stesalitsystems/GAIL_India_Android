@@ -1,4 +1,3 @@
-// lib/common/sidebar/sidebar_item.dart
 enum SidebarItem {
   dashboard,
   userManagement,
@@ -13,4 +12,7 @@ enum SidebarItem {
   dryOutHistory,
   msWiseLcvQueue,
   salesHistory,
+  Reports,
+  map,
+  settings,
 }

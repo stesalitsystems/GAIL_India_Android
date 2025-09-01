@@ -3,6 +3,7 @@ import 'package:gail_india/utils/constants/colors.dart';
 import 'package:gail_india/utils/constants/sizes.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
+import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart' as ltlng;
 
 class GHelperFunctions {
@@ -85,5 +86,27 @@ class GHelperFunctions {
     );
 
     return ltlng.LatLng(position.latitude, position.longitude);
+  }
+
+  // Helper: a reusable slide page factory
+  CustomTransitionPage<T> slideRightToLeftPage<T>({
+    required GoRouterState state,
+    required Widget child,
+    Duration duration = const Duration(milliseconds: 300),
+    Curve curve = Curves.easeInOut,
+  }) {
+    return CustomTransitionPage<T>(
+      key: state.pageKey,
+      transitionDuration: duration,
+      reverseTransitionDuration: duration,
+      child: child,
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        final tween = Tween<Offset>(
+          begin: const Offset(1, 0),
+          end: Offset.zero,
+        ).chain(CurveTween(curve: curve));
+        return SlideTransition(position: animation.drive(tween), child: child);
+      },
+    );
   }
 }

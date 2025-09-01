@@ -45,8 +45,8 @@ final menuByRole = {
     MenuItemConfig('Sales', '/sales'),
     MenuItemConfig('Reports', '/reports'),
   ],
-  UserRole.driver: const [
-    MenuItemConfig('Dashboard', '/dash/driver'),
-    MenuItemConfig('My Trips', '/trips'),
-  ],
+  // UserRole.driver: const [
+  //   MenuItemConfig('Dashboard', '/dash/driver'),
+  //   MenuItemConfig('My Trips', '/trips'),
+  // ],
 };

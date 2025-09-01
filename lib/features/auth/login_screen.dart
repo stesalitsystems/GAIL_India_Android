@@ -1,68 +1,102 @@
+import 'dart:convert';
+import 'package:crypto/crypto.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:gail_india/auth/state/auth_controller.dart';
 import 'package:gail_india/utils/constants/colors.dart';
+import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
-import 'package:lottie/lottie.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class ForgotPassword extends StatefulWidget {
-  ForgotPassword({Key? key, this.title}) : super(key: key);
-
+class LoginPage extends StatefulWidget {
+  LoginPage({Key? key, this.title}) : super(key: key);
   final String? title;
 
   @override
-  _ForgotPasswordState createState() => _ForgotPasswordState();
+  State<LoginPage> createState() => _LoginPage1State();
 }
 
-class _ForgotPasswordState extends State<ForgotPassword> {
+class _LoginPage1State extends State<LoginPage> {
   bool _isPasswordVisible = false;
-  final TextEditingController _usernameController = TextEditingController();
-  bool _isLoading = false; // To show loading indicator during login
-
-  // Variables to store message and type
+  final email = TextEditingController();
+  final password = TextEditingController();
+  bool _isLoading = false;
   String? _message;
   bool _isErrorMessage = false; // true if error, false if success
   bool _showMessage = false; // Control visibility of the message
 
-  // Map of error messages based on status codes
   Map<int, String> errorMessages = {
-    400: 'Bad Request: Invalid username.',
-    401: 'Unauthorized: Please check your credentials.',
+    400:
+        'Bad Request: The server could not understand the request due to invalid syntax.',
+    401: 'Wrong credentials: Please check your email and password.',
     403: 'Forbidden: You do not have permission to access this resource.',
     404: 'Not Found: The requested resource could not be found.',
-    500: 'Internal Server Error: Please try again later.',
+    500:
+        'Internal Server Error: The server encountered an unexpected condition.',
   };
 
-  void _showLoadingDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false, // Prevents dismissal by tapping outside
-      builder: (BuildContext context) {
-        return Dialog(
-          backgroundColor: Colors.transparent,
-          child: Center(
-            child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  Future<void> _login() async {
+    setState(() => _isLoading = true);
+    try {
+      await context.read<AuthController>().loginWithCredentials(
+        email.text,
+        password.text,
+      );
+      if (!mounted) return;
+      context.go('/dash');
+    } catch (_) {
+      _message = 'Login failed';
+      _isErrorMessage = true;
+      _showMessage = true;
+      setState(() {});
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Widget _bottomMessage() {
+    if (!_showMessage || _message == null) return const SizedBox.shrink();
+    return Positioned(
+      bottom: 20,
+      left: 20,
+      right: 20,
+      child: Container(
+        height: 60,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        decoration: BoxDecoration(
+          color: _isErrorMessage
+              ? const Color.fromARGB(255, 230, 47, 47)
+              : Colors.green,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Center(
+          child: Text(
+            _message!,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
             ),
+            textAlign: TextAlign.center,
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
-  void _hideLoadingDialog() {
-    Navigator.of(context, rootNavigator: true).pop(); // Close the dialog
-  }
-
-  // Widget to build the input field
-  Widget _entryField(String title) {
+  Widget _entryField(String title, {bool isPassword = false}) {
     final screenWidth = MediaQuery.of(context).size.width;
 
     return Padding(
       padding: EdgeInsets.symmetric(
         horizontal: screenWidth * 0.04,
-        vertical: 8,
-      ),
+      ), // Adjust the padding as needed
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -71,8 +105,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
             style: TextStyle(
               fontWeight: FontWeight.normal,
               fontSize: screenWidth * 0.035,
-
-              color: Color.fromARGB(255, 136, 134, 134),
+              color: GColors.black,
             ),
           ),
           SizedBox(height: screenWidth * 0.01),
@@ -81,6 +114,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
               vertical: screenWidth * 0.008,
               horizontal: screenWidth * 0.04,
             ),
+            margin: EdgeInsets.symmetric(vertical: screenWidth * 0.01),
             decoration: BoxDecoration(
               color: const Color.fromARGB(255, 255, 255, 255),
               borderRadius: BorderRadius.circular(5),
@@ -95,7 +129,9 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                   width: screenWidth * 0.06,
                   height: screenWidth * 0.06,
                   child: Image.asset(
-                    'assets/icons/email.png',
+                    isPassword
+                        ? 'assets/icons/Lock-Icon-face.png'
+                        : 'assets/icons/email.png',
                     fit: BoxFit.contain,
                     color: Colors.grey,
                   ),
@@ -103,10 +139,12 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                 SizedBox(width: screenWidth * 0.02),
                 Expanded(
                   child: TextField(
-                    controller: _usernameController,
+                    controller: isPassword ? password : email,
+                    obscureText: isPassword && !_isPasswordVisible,
+
                     style: TextStyle(
                       fontWeight: FontWeight.normal,
-                      color: Color.fromARGB(255, 136, 134, 134),
+                      color: const Color.fromARGB(255, 136, 134, 134),
                       fontSize: screenWidth * 0.04,
                     ),
                     decoration: InputDecoration(
@@ -130,6 +168,22 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                     ),
                   ),
                 ),
+                if (isPassword)
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _isPasswordVisible = !_isPasswordVisible;
+                      });
+                    },
+                    child: Image.asset(
+                      _isPasswordVisible
+                          ? 'assets/icons/Eye-Open-Icon.png'
+                          : 'assets/icons/Eye-Closed-Icon.png',
+                      width: screenWidth * 0.065,
+                      height: screenWidth * 0.065,
+                      color: Colors.grey,
+                    ),
+                  ),
               ],
             ),
           ),
@@ -138,12 +192,11 @@ class _ForgotPasswordState extends State<ForgotPassword> {
     );
   }
 
-  // Widget to build the Send OTP button
   Widget _submitButton() {
     final screenWidth = MediaQuery.of(context).size.width;
 
     return GestureDetector(
-      onTap: () {},
+      onTap: _isLoading ? null : _login, // Disable button if loading
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.04),
         child: Container(
@@ -179,7 +232,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                   ),
                 )
               : Text(
-                  'Send OTP',
+                  'Login',
                   style: TextStyle(
                     fontSize: screenWidth * 0.05,
                     color: Colors.white,
@@ -192,20 +245,28 @@ class _ForgotPasswordState extends State<ForgotPassword> {
     );
   }
 
-  // Widget to build the title
   Widget _title() {
     final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Row for the image and "Forgot Password" text
+        // Row for the image and "Welcome Back" text
         Row(
           mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Image.asset('assets/Red-Vertical-Line.png', width: 40, height: 40),
-            // SizedBox(width: 0),
+            // Padding(
+            //   padding: const EdgeInsets.only(
+            //     left: 15.0,
+            //   ), // Adjust this value as needed
+            //   child: Image.asset(
+            //     'assets/vehicle/cng_tanker.png',
+            //     width: 200, // Adjust width as needed
+            //     height: 30, // Adjust height as needed
+            //   ),
+            // ),
             SizedBox(width: 0.02), // Adjust the width for desired spacing
             Padding(
               padding: const EdgeInsets.only(left: 15.0),
@@ -214,14 +275,15 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                 text: TextSpan(
                   children: [
                     TextSpan(
-                      text: 'Forgot',
+                      text: 'Welcome',
                       style: Theme.of(context).textTheme.headlineLarge,
                     ),
+
                     TextSpan(
                       text: ' ', // Add a space here
                     ),
                     TextSpan(
-                      text: 'Password!',
+                      text: 'Back!',
                       style: Theme.of(context).textTheme.headlineLarge,
                     ),
                   ],
@@ -230,53 +292,82 @@ class _ForgotPasswordState extends State<ForgotPassword> {
             ),
           ],
         ),
+
         SizedBox(height: screenWidth * 0.02),
+
+        // Adjusted left movement for "Please login to continue" text
         Padding(
-          padding: const EdgeInsets.only(left: 20.0),
+          padding: const EdgeInsets.only(
+            left: 15.0,
+          ), // Adjust left padding as needed
           child: Text(
-            'Please enter your email to receive a verification code.',
-            style: Theme.of(context).textTheme.titleSmall,
+            'Please login to continue',
+            style: Theme.of(context).textTheme.titleLarge,
           ),
         ),
       ],
     );
   }
 
-  @override
-  void dispose() {
-    _usernameController.dispose();
-    super.dispose();
+  Widget _emailPasswordWidget() {
+    return Column(
+      children: <Widget>[
+        _entryField("Email"),
+        SizedBox(height: 10),
+        _entryField("Password", isPassword: true),
+        SizedBox(height: 10),
+        _forgotPasswordSection(),
+      ],
+    );
   }
 
-  Widget _ResetPasswordSection() {
-    return Container(
-      padding: EdgeInsets.symmetric(vertical: 10),
-      alignment: Alignment.center,
+  Widget _forgotPasswordSection() {
+    return Padding(
+      padding: const EdgeInsets.only(
+        left: 18.0,
+      ), // Adjust as needed to align with your password field
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.start,
         children: [
-          Text(
-            'Sign Up',
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-          ),
-          SizedBox(width: 5),
           GestureDetector(
             onTap: () {
-              // Handle "Click here to reset" tap
-              print('Redirecting to password reset page...');
-              // You can navigate to a password reset screen here or show a dialog.
+              context.push('/reset_password');
             },
             child: Text(
-              'Click here to reset',
+              'Forgot Password?',
               style: TextStyle(
                 fontSize: 14,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w700,
 
-                color: const Color.fromARGB(255, 25, 81, 156),
+                color: Color(0xFF000080),
+                // decoration: TextDecoration.underline, // Uncomment if you want underline
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _SignupSection() {
+    return Padding(
+      padding: const EdgeInsets.only(top: 12.0), // optional vertical spacing
+      child: Center(
+        child: GestureDetector(
+          onTap: () {
+            context.push('/create_account');
+          },
+          child: Text(
+            'New User? Register Now',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w900,
+
+              color: Color(0xFF000080),
+              // decoration: TextDecoration.underline,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -293,7 +384,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
       child: RichText(
         textAlign: TextAlign.center,
         text: TextSpan(
-          style: TextStyle(fontSize: 12, color: Colors.grey),
+          style: TextStyle(fontSize: 12, color: GColors.black),
           children: [
             TextSpan(
               text: 'Terms & Conditions',
@@ -303,7 +394,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
               ),
               recognizer: TapGestureRecognizer()
                 ..onTap = () {
-                  _launchURL('https://www.google.com/');
+                  _launchURL('https://google.com');
                 },
             ),
             TextSpan(text: ' and '),
@@ -315,7 +406,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
               ),
               recognizer: TapGestureRecognizer()
                 ..onTap = () {
-                  _launchURL('https://www.google.com/');
+                  _launchURL('https://google.com');
                 },
             ),
             TextSpan(text: ' will be applied.'),
@@ -323,6 +414,14 @@ class _ForgotPasswordState extends State<ForgotPassword> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    // Dispose controllers when the widget is disposed
+    email.dispose();
+    password.dispose();
+    super.dispose();
   }
 
   @override
@@ -335,12 +434,23 @@ class _ForgotPasswordState extends State<ForgotPassword> {
       resizeToAvoidBottomInset: false,
       body: Stack(
         children: <Widget>[
-          // Background image
-          // Positioned.fill(
-          //   child: Image.asset('assets/BG.jpg', fit: BoxFit.cover),
-          // ),
+          // Background image that fills the screen.
+          Positioned.fill(
+            child: Align(
+              alignment: Alignment
+                  .center, // place it where you want (center/topLeft/etc.)
+              child: Opacity(
+                opacity: 0.2, // 0.0 = fully transparent, 1.0 = fully visible
+                child: Image.asset(
+                  'assets/app_icons/GAIL.png',
+                  width: 420, // make it small
+                  height: 420, // control the size
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+          ),
 
-          // Main content
           Container(
             padding: EdgeInsets.symmetric(horizontal: width * 0.043),
             constraints: BoxConstraints(minHeight: height),
@@ -348,27 +458,20 @@ class _ForgotPasswordState extends State<ForgotPassword> {
               crossAxisAlignment: CrossAxisAlignment.center,
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
-                SizedBox(height: height * 0.4),
+                // SizedBox(height: height * 0.1),
                 _title(),
-                SizedBox(height: height * 0.04),
-                _entryField("Email"),
-                SizedBox(height: height * 0.03),
+                SizedBox(height: height * .02),
+                _emailPasswordWidget(),
+                SizedBox(height: height * .03),
                 _submitButton(),
+                SizedBox(height: height * .01),
+                _SignupSection(),
               ],
             ),
           ),
-
-          // Back Button
-          Positioned(
-            top: height * 0.07,
-            left: width * 0.05,
-            child: GestureDetector(
-              onTap: () {
-                Navigator.pop(context); // Navigate back
-              },
-              child: Icon(Icons.arrow_back, color: Colors.black, size: 24),
-            ),
-          ),
+          // Bottom message widget.
+          _bottomMessage(),
+          // Privacy policy widget positioned at the bottom.
           Positioned(
             bottom: 20,
             left: 0,

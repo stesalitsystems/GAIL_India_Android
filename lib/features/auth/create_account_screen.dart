@@ -20,7 +20,9 @@ class _CreateAccountState extends State<CreateAccount> {
   final _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
   String? _selectedRole;
-
+  String? _selectedGA;
+  String? _selectedMS;
+  String? _selectedDBS;
   bool _isLoading = false;
 
   List<String> kRoles = <String>[
@@ -28,9 +30,25 @@ class _CreateAccountState extends State<CreateAccount> {
     'GA Incharge',
     'MS Admin',
     'DBS Admin',
-    'Driver',
   ];
 
+  // --- Demo data: replace with your API data ---
+  final List<String> gaOptions = const ['North GA', 'South GA', 'West GA'];
+
+  final Map<String, List<String>> msByGa = const {
+    'North GA': ['MS-N1', 'MS-N2', 'MS-N3'],
+    'South GA': ['MS-S1', 'MS-S2'],
+    'West GA': ['MS-W1'],
+  };
+
+  final Map<String, List<String>> dbsByMs = const {
+    'MS-N1': ['DBS-N1-A', 'DBS-N1-B'],
+    'MS-N2': ['DBS-N2-A'],
+    'MS-N3': ['DBS-N3-A', 'DBS-N3-B', 'DBS-N3-C'],
+    'MS-S1': ['DBS-S1-A'],
+    'MS-S2': ['DBS-S2-A', 'DBS-S2-B'],
+    'MS-W1': ['DBS-W1-A'],
+  };
   // Map of error messages based on status codes
   Map<int, String> errorMessages = {
     400: 'Bad Request: Invalid OTP or password format.',
@@ -61,17 +79,21 @@ class _CreateAccountState extends State<CreateAccount> {
     Navigator.of(context, rootNavigator: true).pop(); // Close the dialog
   }
 
-  Widget roleDropdown({
-    required String label, // e.g., 'Role'
-    required String? value, // current selected value
+  Widget dropdownField({
+    required String label,
+    required String? value,
+    required List<String> items,
     required ValueChanged<String?> onChanged,
+    required String leadingAssetPath,
+    bool enabled = true,
+    String? hintText,
   }) {
     final screenWidth = MediaQuery.of(context).size.width;
 
     return Padding(
       padding: EdgeInsets.symmetric(
         horizontal: screenWidth * 0.04,
-        vertical: 8,
+        vertical: 4,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -81,16 +103,13 @@ class _CreateAccountState extends State<CreateAccount> {
             style: TextStyle(
               fontWeight: FontWeight.normal,
               fontSize: screenWidth * 0.035,
-
               color: const Color.fromARGB(255, 136, 134, 134),
             ),
           ),
           SizedBox(height: screenWidth * 0.01),
-
-          // Field container (same as your _entryField)
           Container(
             padding: EdgeInsets.symmetric(
-              vertical: screenWidth * 0.008,
+              vertical: screenWidth * 0.004,
               horizontal: screenWidth * 0.04,
             ),
             decoration: BoxDecoration(
@@ -103,38 +122,35 @@ class _CreateAccountState extends State<CreateAccount> {
             ),
             child: Row(
               children: [
-                // Leading icon (same dimension as _entryField)
                 SizedBox(
-                  width: screenWidth * 0.06,
-                  height: screenWidth * 0.06,
+                  width: screenWidth * 0.05,
+                  height: screenWidth * 0.05,
                   child: Image.asset(
-                    'assets/icons/User-Icon-face.png',
+                    leadingAssetPath,
                     fit: BoxFit.contain,
                     color: Colors.grey,
                   ),
                 ),
                 SizedBox(width: screenWidth * 0.02),
-
-                // Dropdown (expanded to fill remaining space)
                 Expanded(
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<String>(
                       isExpanded: true,
-                      value: value,
+                      value: enabled ? value : null,
                       icon: const Icon(
                         Icons.keyboard_arrow_down,
                         color: Colors.grey,
+                      ),
+                      hint: Text(
+                        hintText ?? 'Select',
+                        style: const TextStyle(color: Colors.grey),
                       ),
                       style: TextStyle(
                         fontWeight: FontWeight.normal,
                         color: const Color.fromARGB(255, 136, 134, 134),
                         fontSize: screenWidth * 0.04,
                       ),
-                      hint: const Text(
-                        'Select role',
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                      items: kRoles
+                      items: (enabled ? items : <String>[])
                           .map(
                             (r) => DropdownMenuItem<String>(
                               value: r,
@@ -142,7 +158,7 @@ class _CreateAccountState extends State<CreateAccount> {
                             ),
                           )
                           .toList(),
-                      onChanged: onChanged,
+                      onChanged: enabled ? onChanged : null,
                     ),
                   ),
                 ),
@@ -151,6 +167,21 @@ class _CreateAccountState extends State<CreateAccount> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget roleDropdown({
+    required String label,
+    required String? value,
+    required ValueChanged<String?> onChanged,
+  }) {
+    return dropdownField(
+      label: label,
+      value: value,
+      items: kRoles,
+      onChanged: onChanged,
+      leadingAssetPath: 'assets/icons/User-Icon-face.png',
+      hintText: 'Select role',
     );
   }
 
@@ -168,7 +199,7 @@ class _CreateAccountState extends State<CreateAccount> {
     return Padding(
       padding: EdgeInsets.symmetric(
         horizontal: screenWidth * 0.04,
-        vertical: 8,
+        vertical: 4,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -185,7 +216,7 @@ class _CreateAccountState extends State<CreateAccount> {
           SizedBox(height: screenWidth * 0.01),
           Container(
             padding: EdgeInsets.symmetric(
-              vertical: screenWidth * 0.008,
+              vertical: screenWidth * 0.0002,
               horizontal: screenWidth * 0.04,
             ),
             decoration: BoxDecoration(
@@ -199,8 +230,8 @@ class _CreateAccountState extends State<CreateAccount> {
             child: Row(
               children: [
                 SizedBox(
-                  width: screenWidth * 0.06,
-                  height: screenWidth * 0.06,
+                  width: screenWidth * 0.05,
+                  height: screenWidth * 0.05,
                   child: Image.asset(
                     leadingAssetPath,
                     fit: BoxFit.contain,
@@ -248,8 +279,8 @@ class _CreateAccountState extends State<CreateAccount> {
                       _isPasswordVisible
                           ? 'assets/icons/Eye-Open-Icon.png'
                           : 'assets/icons/Eye-Closed-Icon.png',
-                      width: screenWidth * 0.065,
-                      height: screenWidth * 0.065,
+                      width: screenWidth * 0.05,
+                      height: screenWidth * 0.05,
                       color: Colors.grey,
                     ),
                   ),
@@ -272,20 +303,12 @@ class _CreateAccountState extends State<CreateAccount> {
         child: Container(
           width: screenWidth,
           padding: EdgeInsets.symmetric(
-            vertical: screenWidth * 0.04,
+            vertical: screenWidth * 0.03,
             horizontal: screenWidth * 0.05,
           ),
           alignment: Alignment.center,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.all(Radius.circular(5)),
-            // boxShadow: <BoxShadow>[
-            //   BoxShadow(
-            //     color: Colors.grey.shade200,
-            //     offset: Offset(2, 4),
-            //     blurRadius: 5,
-            //     spreadRadius: 2,
-            //   ),
-            // ],
             gradient: LinearGradient(
               begin: Alignment.centerLeft,
               end: Alignment.centerRight,
@@ -352,7 +375,7 @@ class _CreateAccountState extends State<CreateAccount> {
             ),
           ],
         ),
-        SizedBox(height: screenWidth * 0.02),
+        // SizedBox(height: screenWidth * 0.02),
         // Padding(
         //   padding: const EdgeInsets.only(left: 20.0),
         //   child: Text(
@@ -461,9 +484,7 @@ class _CreateAccountState extends State<CreateAccount> {
   //           width: 150,
   //           height: 50,
   //         ),
-
   //         // const SizedBox(height: 12),
-
   //         // 2. RichText inside a Row, centered
   //         Row(
   //           mainAxisSize: MainAxisSize.min,
@@ -517,10 +538,27 @@ class _CreateAccountState extends State<CreateAccount> {
     super.dispose();
   }
 
+  bool get _showGA =>
+      _selectedRole == 'GA Incharge' ||
+      _selectedRole == 'MS Admin' ||
+      _selectedRole == 'DBS Admin' ||
+      _selectedRole == 'Driver';
+  bool get _showMS =>
+      _selectedRole == 'MS Admin' || _selectedRole == 'DBS Admin';
+  bool get _showDBS => _selectedRole == 'DBS Admin';
+
   @override
   Widget build(BuildContext context) {
     final height = MediaQuery.of(context).size.height;
     final width = MediaQuery.of(context).size.width;
+
+    // Build cascaded lists based on selection
+    final List<String> msOptions = (_selectedGA != null)
+        ? (msByGa[_selectedGA] ?? const [])
+        : const [];
+    final List<String> dbsOptions = (_selectedMS != null)
+        ? (dbsByMs[_selectedMS] ?? const [])
+        : const [];
 
     return Scaffold(
       backgroundColor: GColors.primary,
@@ -531,7 +569,21 @@ class _CreateAccountState extends State<CreateAccount> {
           // Positioned.fill(
           //   child: Image.asset('assets/BG.jpg', fit: BoxFit.cover),
           // ),
-
+          Positioned.fill(
+            child: Align(
+              alignment: Alignment
+                  .center, // place it where you want (center/topLeft/etc.)
+              child: Opacity(
+                opacity: 0.2, // 0.0 = fully transparent, 1.0 = fully visible
+                child: Image.asset(
+                  'assets/app_icons/GAIL.png',
+                  width: 420, // make it small
+                  height: 420, // control the size
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+          ),
           // Main content
           SingleChildScrollView(
             child: Container(
@@ -567,12 +619,74 @@ class _CreateAccountState extends State<CreateAccount> {
                     obscure: true,
                     showEye: true, // shows the eye toggle
                   ),
+                  // Role picker
                   roleDropdown(
                     label: 'Role',
                     value: _selectedRole,
-                    onChanged: (val) => setState(() => _selectedRole = val),
+                    onChanged: (val) {
+                      setState(() {
+                        _selectedRole = val;
+                        // Reset cascading selections when role changes
+                        _selectedGA = null;
+                        _selectedMS = null;
+                        _selectedDBS = null;
+                      });
+                    },
                   ),
-                  SizedBox(height: height * 0.03),
+
+                  // Conditionally show GA/MS/DBS with proper enable/disable & cascading
+                  if (_showGA)
+                    dropdownField(
+                      label: 'Geographical Area',
+                      value: _selectedGA,
+                      items: gaOptions,
+                      onChanged: (val) {
+                        setState(() {
+                          _selectedGA = val;
+                          // Reset dependents
+                          _selectedMS = null;
+                          _selectedDBS = null;
+                        });
+                      },
+                      leadingAssetPath:
+                          'assets/icons/User-Icon-face.png', // replace with your icon
+                      hintText: 'Select geographical area',
+                    ),
+
+                  if (_showMS)
+                    dropdownField(
+                      label: 'Mother Station',
+                      value: _selectedMS,
+                      items: msOptions,
+                      onChanged: (val) {
+                        setState(() {
+                          _selectedMS = val;
+                          _selectedDBS = null;
+                        });
+                      },
+                      enabled: _selectedGA != null,
+                      leadingAssetPath:
+                          'assets/icons/User-Icon-face.png', // replace with your icon
+                      hintText: _selectedGA == null
+                          ? 'Select GA first'
+                          : 'Select mother station',
+                    ),
+
+                  if (_showDBS)
+                    dropdownField(
+                      label: 'Daughter Booster Station',
+                      value: _selectedDBS,
+                      items: dbsOptions,
+                      onChanged: (val) => setState(() => _selectedDBS = val),
+                      enabled: _selectedMS != null,
+                      leadingAssetPath:
+                          'assets/icons/User-Icon-face.png', // replace with your icon
+                      hintText: _selectedMS == null
+                          ? 'Select MS first'
+                          : 'Select daughter booster station',
+                    ),
+
+                  SizedBox(height: height * 0.01),
                   _submitButton(),
                 ],
               ),
@@ -590,12 +704,12 @@ class _CreateAccountState extends State<CreateAccount> {
               child: Icon(Icons.arrow_back, color: Colors.black, size: 24),
             ),
           ),
-          Positioned(
-            bottom: 16,
-            left: 0,
-            right: 0,
-            child: _buildPrivacyPolicyWidget(),
-          ),
+          // Positioned(
+          //   bottom: 16,
+          //   left: 0,
+          //   right: 0,
+          //   child: _buildPrivacyPolicyWidget(),
+          // ),
         ],
       ),
     );

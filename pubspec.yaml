@@ -16,8 +16,6 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_map: ^8.2.1
-  flutter_riverpod: ^2.6.1
-  flutter_secure_storage: ^9.2.4
   geolocator: ^14.0.2
   get: ^4.7.2
   get_storage: ^2.1.1
@@ -27,6 +25,8 @@ dependencies:
   intl: ^0.20.2
   logger: ^2.6.0
   lottie: ^3.3.1
+  provider: ^6.1.5+1
+  shared_preferences: ^2.5.3
   url_launcher: ^6.3.2
 
 # Development dependencies
@@ -44,6 +44,7 @@ flutter:
     - assets/icons/
     - assets/vehicle/
     - assets/lottie/
+    - assets/app_icons/
   # fonts:
   #   - family: Schyler
   #     fonts:

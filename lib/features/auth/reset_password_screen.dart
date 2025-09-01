@@ -1,109 +1,68 @@
-import 'dart:convert';
-import 'package:crypto/crypto.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:gail_india/auth/state/auth_controller.dart';
 import 'package:gail_india/utils/constants/colors.dart';
-import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
+import 'package:lottie/lottie.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class LoginPage extends ConsumerStatefulWidget {
-  LoginPage({Key? key, this.title}) : super(key: key);
+class ForgotPassword extends StatefulWidget {
+  ForgotPassword({Key? key, this.title}) : super(key: key);
+
   final String? title;
 
   @override
-  ConsumerState<LoginPage> createState() => _LoginPage1State();
+  _ForgotPasswordState createState() => _ForgotPasswordState();
 }
 
-class _LoginPage1State extends ConsumerState<LoginPage> {
+class _ForgotPasswordState extends State<ForgotPassword> {
   bool _isPasswordVisible = false;
-  final email = TextEditingController();
-  final password = TextEditingController();
-  bool _isLoading = false;
+  final TextEditingController _usernameController = TextEditingController();
+  bool _isLoading = false; // To show loading indicator during login
 
   // Variables to store message and type
   String? _message;
   bool _isErrorMessage = false; // true if error, false if success
   bool _showMessage = false; // Control visibility of the message
 
+  // Map of error messages based on status codes
   Map<int, String> errorMessages = {
-    400:
-        'Bad Request: The server could not understand the request due to invalid syntax.',
-    401: 'Wrong credentials: Please check your email and password.',
+    400: 'Bad Request: Invalid username.',
+    401: 'Unauthorized: Please check your credentials.',
     403: 'Forbidden: You do not have permission to access this resource.',
     404: 'Not Found: The requested resource could not be found.',
-    500:
-        'Internal Server Error: The server encountered an unexpected condition.',
+    500: 'Internal Server Error: Please try again later.',
   };
 
-  @override
-  void initState() {
-    super.initState();
-  }
-
-  Future<void> _login() async {
-    setState(() => _isLoading = true);
-    context.go('/superadmin');
-    // try {
-    //   await ref
-    //       .read(authControllerProvider.notifier)
-    //       .login(email.text, password.text);
-    //   // navigation is handled by GoRouter redirect on auth state change
-    // } catch (e) {
-    //   // optionally set your bottom message here
-    //   _message = 'Login failed';
-    //   _isErrorMessage = true;
-    //   _showMessage = true;
-    //   setState(() {});
-    // } finally {
-    //   if (mounted) setState(() => _isLoading = false);
-    // }
-  }
-
-  Widget _bottomMessage() {
-    if (!_showMessage || _message == null) {
-      return SizedBox.shrink();
-    }
-
-    return Positioned(
-      bottom: 20,
-      left: 20,
-      right: 20,
-      child: Container(
-        height: 60, // Fixed height for both success and error messages
-        width: double.infinity, // Stretch the container across the width
-        padding: EdgeInsets.symmetric(horizontal: 12),
-        decoration: BoxDecoration(
-          color: _isErrorMessage
-              ? Color.fromARGB(255, 230, 47, 47)
-              : Colors.green,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Center(
-          // Center the message within the container
-          child: Text(
-            _message!,
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 16, // Set a fixed font size for consistency
+  void _showLoadingDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false, // Prevents dismissal by tapping outside
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: Center(
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
             ),
-            textAlign: TextAlign.center,
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
-  Widget _entryField(String title, {bool isPassword = false}) {
+  void _hideLoadingDialog() {
+    Navigator.of(context, rootNavigator: true).pop(); // Close the dialog
+  }
+
+  // Widget to build the input field
+  Widget _entryField(String title) {
     final screenWidth = MediaQuery.of(context).size.width;
 
     return Padding(
       padding: EdgeInsets.symmetric(
         horizontal: screenWidth * 0.04,
-      ), // Adjust the padding as needed
+        vertical: 8,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -112,7 +71,8 @@ class _LoginPage1State extends ConsumerState<LoginPage> {
             style: TextStyle(
               fontWeight: FontWeight.normal,
               fontSize: screenWidth * 0.035,
-              color: GColors.black,
+
+              color: Color.fromARGB(255, 136, 134, 134),
             ),
           ),
           SizedBox(height: screenWidth * 0.01),
@@ -121,7 +81,6 @@ class _LoginPage1State extends ConsumerState<LoginPage> {
               vertical: screenWidth * 0.008,
               horizontal: screenWidth * 0.04,
             ),
-            margin: EdgeInsets.symmetric(vertical: screenWidth * 0.01),
             decoration: BoxDecoration(
               color: const Color.fromARGB(255, 255, 255, 255),
               borderRadius: BorderRadius.circular(5),
@@ -136,9 +95,7 @@ class _LoginPage1State extends ConsumerState<LoginPage> {
                   width: screenWidth * 0.06,
                   height: screenWidth * 0.06,
                   child: Image.asset(
-                    isPassword
-                        ? 'assets/icons/Lock-Icon-face.png'
-                        : 'assets/icons/email.png',
+                    'assets/icons/email.png',
                     fit: BoxFit.contain,
                     color: Colors.grey,
                   ),
@@ -146,11 +103,10 @@ class _LoginPage1State extends ConsumerState<LoginPage> {
                 SizedBox(width: screenWidth * 0.02),
                 Expanded(
                   child: TextField(
-                    controller: isPassword ? password : email,
-                    obscureText: isPassword && !_isPasswordVisible,
+                    controller: _usernameController,
                     style: TextStyle(
                       fontWeight: FontWeight.normal,
-                      color: const Color.fromARGB(255, 136, 134, 134),
+                      color: Color.fromARGB(255, 136, 134, 134),
                       fontSize: screenWidth * 0.04,
                     ),
                     decoration: InputDecoration(
@@ -174,22 +130,6 @@ class _LoginPage1State extends ConsumerState<LoginPage> {
                     ),
                   ),
                 ),
-                if (isPassword)
-                  GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _isPasswordVisible = !_isPasswordVisible;
-                      });
-                    },
-                    child: Image.asset(
-                      _isPasswordVisible
-                          ? 'assets/icons/Eye-Open-Icon.png'
-                          : 'assets/icons/Eye-Closed-Icon.png',
-                      width: screenWidth * 0.065,
-                      height: screenWidth * 0.065,
-                      color: Colors.grey,
-                    ),
-                  ),
               ],
             ),
           ),
@@ -198,11 +138,12 @@ class _LoginPage1State extends ConsumerState<LoginPage> {
     );
   }
 
+  // Widget to build the Send OTP button
   Widget _submitButton() {
     final screenWidth = MediaQuery.of(context).size.width;
 
     return GestureDetector(
-      onTap: _isLoading ? null : _login, // Disable button if loading
+      onTap: () {},
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.04),
         child: Container(
@@ -238,7 +179,7 @@ class _LoginPage1State extends ConsumerState<LoginPage> {
                   ),
                 )
               : Text(
-                  'Login',
+                  'Send OTP',
                   style: TextStyle(
                     fontSize: screenWidth * 0.05,
                     color: Colors.white,
@@ -251,28 +192,20 @@ class _LoginPage1State extends ConsumerState<LoginPage> {
     );
   }
 
+  // Widget to build the title
   Widget _title() {
     final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Row for the image and "Welcome Back" text
+        // Row for the image and "Forgot Password" text
         Row(
           mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Padding(
-            //   padding: const EdgeInsets.only(
-            //     left: 15.0,
-            //   ), // Adjust this value as needed
-            //   child: Image.asset(
-            //     'assets/vehicle/cng_tanker.png',
-            //     width: 200, // Adjust width as needed
-            //     height: 30, // Adjust height as needed
-            //   ),
-            // ),
+            // Image.asset('assets/Red-Vertical-Line.png', width: 40, height: 40),
+            // SizedBox(width: 0),
             SizedBox(width: 0.02), // Adjust the width for desired spacing
             Padding(
               padding: const EdgeInsets.only(left: 15.0),
@@ -281,15 +214,14 @@ class _LoginPage1State extends ConsumerState<LoginPage> {
                 text: TextSpan(
                   children: [
                     TextSpan(
-                      text: 'Welcome',
+                      text: 'Forgot',
                       style: Theme.of(context).textTheme.headlineLarge,
                     ),
-
                     TextSpan(
                       text: ' ', // Add a space here
                     ),
                     TextSpan(
-                      text: 'Back!',
+                      text: 'Password!',
                       style: Theme.of(context).textTheme.headlineLarge,
                     ),
                   ],
@@ -298,82 +230,53 @@ class _LoginPage1State extends ConsumerState<LoginPage> {
             ),
           ],
         ),
-
         SizedBox(height: screenWidth * 0.02),
-
-        // Adjusted left movement for "Please login to continue" text
         Padding(
-          padding: const EdgeInsets.only(
-            left: 15.0,
-          ), // Adjust left padding as needed
+          padding: const EdgeInsets.only(left: 20.0),
           child: Text(
-            'Please login to continue',
-            style: Theme.of(context).textTheme.titleLarge,
+            'Please enter your email to receive a verification code.',
+            style: Theme.of(context).textTheme.titleSmall,
           ),
         ),
       ],
     );
   }
 
-  Widget _emailPasswordWidget() {
-    return Column(
-      children: <Widget>[
-        _entryField("Email"),
-        SizedBox(height: 10),
-        _entryField("Password", isPassword: true),
-        SizedBox(height: 10),
-        _forgotPasswordSection(),
-      ],
-    );
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    super.dispose();
   }
 
-  Widget _forgotPasswordSection() {
-    return Padding(
-      padding: const EdgeInsets.only(
-        left: 18.0,
-      ), // Adjust as needed to align with your password field
+  Widget _ResetPasswordSection() {
+    return Container(
+      padding: EdgeInsets.symmetric(vertical: 10),
+      alignment: Alignment.center,
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          Text(
+            'Sign Up',
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+          ),
+          SizedBox(width: 5),
           GestureDetector(
             onTap: () {
-              context.push('/reset_password');
+              // Handle "Click here to reset" tap
+              print('Redirecting to password reset page...');
+              // You can navigate to a password reset screen here or show a dialog.
             },
             child: Text(
-              'Forgot Password?',
+              'Click here to reset',
               style: TextStyle(
                 fontSize: 14,
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w500,
 
-                color: Color(0xFF000080),
-                // decoration: TextDecoration.underline, // Uncomment if you want underline
+                color: const Color.fromARGB(255, 25, 81, 156),
               ),
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _SignupSection() {
-    return Padding(
-      padding: const EdgeInsets.only(top: 12.0), // optional vertical spacing
-      child: Center(
-        child: GestureDetector(
-          onTap: () {
-            context.push('/create_account');
-          },
-          child: Text(
-            'New User? Register Now',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w900,
-
-              color: Color(0xFF000080),
-              // decoration: TextDecoration.underline,
-            ),
-          ),
-        ),
       ),
     );
   }
@@ -390,7 +293,7 @@ class _LoginPage1State extends ConsumerState<LoginPage> {
       child: RichText(
         textAlign: TextAlign.center,
         text: TextSpan(
-          style: TextStyle(fontSize: 12, color: GColors.black),
+          style: TextStyle(fontSize: 12, color: Colors.grey),
           children: [
             TextSpan(
               text: 'Terms & Conditions',
@@ -400,7 +303,7 @@ class _LoginPage1State extends ConsumerState<LoginPage> {
               ),
               recognizer: TapGestureRecognizer()
                 ..onTap = () {
-                  _launchURL('https://google.com');
+                  _launchURL('https://www.google.com/');
                 },
             ),
             TextSpan(text: ' and '),
@@ -412,7 +315,7 @@ class _LoginPage1State extends ConsumerState<LoginPage> {
               ),
               recognizer: TapGestureRecognizer()
                 ..onTap = () {
-                  _launchURL('https://google.com');
+                  _launchURL('https://www.google.com/');
                 },
             ),
             TextSpan(text: ' will be applied.'),
@@ -420,14 +323,6 @@ class _LoginPage1State extends ConsumerState<LoginPage> {
         ),
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    // Dispose controllers when the widget is disposed
-    email.dispose();
-    password.dispose();
-    super.dispose();
   }
 
   @override
@@ -440,13 +335,26 @@ class _LoginPage1State extends ConsumerState<LoginPage> {
       resizeToAvoidBottomInset: false,
       body: Stack(
         children: <Widget>[
-          // Background image that fills the screen.
+          // Background image
           // Positioned.fill(
-          //   child: Image.asset(
-          //     'assets/vehicle/cng_tanker.png',
-          //     fit: BoxFit.cover,
-          //   ),
+          //   child: Image.asset('assets/BG.jpg', fit: BoxFit.cover),
           // ),
+          Positioned.fill(
+            child: Align(
+              alignment: Alignment
+                  .center, // place it where you want (center/topLeft/etc.)
+              child: Opacity(
+                opacity: 0.2, // 0.0 = fully transparent, 1.0 = fully visible
+                child: Image.asset(
+                  'assets/app_icons/GAIL.png',
+                  width: 420, // make it small
+                  height: 420, // control the size
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+          ),
+          // Main content
           Container(
             padding: EdgeInsets.symmetric(horizontal: width * 0.043),
             constraints: BoxConstraints(minHeight: height),
@@ -454,26 +362,33 @@ class _LoginPage1State extends ConsumerState<LoginPage> {
               crossAxisAlignment: CrossAxisAlignment.center,
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
-                SizedBox(height: height * 0.38),
+                // SizedBox(height: height * 0.05),
                 _title(),
-                SizedBox(height: height * .02),
-                _emailPasswordWidget(),
-                SizedBox(height: height * .03),
+                SizedBox(height: height * 0.02),
+                _entryField("Email"),
+                SizedBox(height: height * 0.03),
                 _submitButton(),
-                SizedBox(height: height * .01),
-                _SignupSection(),
               ],
             ),
           ),
-          // Bottom message widget.
-          _bottomMessage(),
-          // Privacy policy widget positioned at the bottom.
-          // Positioned(
-          //   bottom: 20,
-          //   left: 0,
-          //   right: 0,
-          //   child: _buildPrivacyPolicyWidget(),
-          // ),
+
+          // Back Button
+          Positioned(
+            top: height * 0.07,
+            left: width * 0.05,
+            child: GestureDetector(
+              onTap: () {
+                Navigator.pop(context); // Navigate back
+              },
+              child: Icon(Icons.arrow_back, color: Colors.black, size: 24),
+            ),
+          ),
+          Positioned(
+            bottom: 20,
+            left: 0,
+            right: 0,
+            child: _buildPrivacyPolicyWidget(),
+          ),
         ],
       ),
     );
