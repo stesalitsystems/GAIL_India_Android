@@ -28,6 +28,7 @@ class GColors {
 
   //Background container
   static const Color lightContainer = Color.fromARGB(255, 245, 245, 245);
+  static const Color lightgreyContainer = Color.fromARGB(255, 228, 226, 226);
   static const Color darkContainer = Color.fromARGB(255, 33, 33, 33);
 
   //Button Colors

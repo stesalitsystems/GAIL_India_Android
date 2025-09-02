@@ -4,6 +4,11 @@ import 'package:gail_india/features/auth/create_account_screen.dart';
 import 'package:gail_india/features/auth/reset_password_screen.dart';
 import 'package:gail_india/features/dashboard/Dashboard.dart';
 import 'package:gail_india/features/auth/login_screen.dart';
+import 'package:gail_india/features/dryout%20detected_today/dryout_detected_today_screen.dart';
+import 'package:gail_india/features/dryouts_today/dryout_detected_screen.dart';
+import 'package:gail_india/features/idle_lcvs/idle_lcv_screen.dart';
+import 'package:gail_india/features/no_dryout_detected_dbs/no_dryout_detected_dbs_screen.dart';
+import 'package:gail_india/features/route_diversion/route_diversion_screen.dart';
 import 'package:gail_india/features/splash/splash_screen.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gail_india/auth/state/auth_controller.dart';
@@ -60,6 +65,17 @@ GoRouter buildRouter(AuthController auth) {
       GoRoute(path: '/create_account', builder: (_, __) => CreateAccount()),
       GoRoute(path: '/reset_password', builder: (_, __) => ForgotPassword()),
       GoRoute(path: '/map', builder: (_, __) => MapScreen()),
+      GoRoute(path: '/route_diversion', builder: (_, __) => RouteDiversion()),
+      GoRoute(path: '/dryouts_today', builder: (_, __) => DryOutsToday()),
+      GoRoute(path: '/idle_lcv', builder: (_, __) => IdleLcvs()),
+      GoRoute(
+        path: '/dryout_today_dbs',
+        builder: (_, __) => DryOutDetectedTodayDbs(),
+      ),
+      GoRoute(
+        path: '/no_dryout_detected_dbs',
+        builder: (_, __) => NoDryOutDetectedDbs(),
+      ),
       GoRoute(
         path: '/areas',
         builder: (_, __) => const _Placeholder('Geographical Areas'),

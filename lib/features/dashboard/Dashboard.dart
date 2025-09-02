@@ -2,170 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:gail_india/common/widgets/appbar/appbar.dart';
 import 'package:gail_india/core/model/role.dart';
 import 'package:gail_india/features/dashboard/widgets/dashboard_cards.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:gail_india/auth/state/auth_controller.dart';
 import 'package:gail_india/common/widgets/sidebar/sidebar.dart';
 import 'package:gail_india/common/widgets/navbar/nav_bar.dart';
 import 'package:gail_india/utils/constants/sizes.dart';
+import 'package:pull_to_refresh/pull_to_refresh.dart';
 
-class DashboardPage extends StatelessWidget {
+class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final auth = context.watch<AuthController>();
-    final role = auth.activeRole ?? UserRole.superAdmin;
-    final scope = auth.activeScope;
-
-    return Scaffold(
-      appBar: const GAppBar(
-        title: 'Dashboard',
-        // subtitle: 'Role-aware Overview',
-      ),
-      drawer: const GSidebar(),
-      body: RefreshIndicator(
-        onRefresh: () async =>
-            await Future.delayed(const Duration(milliseconds: 500)),
-        color: Colors.black,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(left: 10, right: 10),
-              child: Row(
-                children: [
-                  // Title on the left
-                  Expanded(
-                    child: Text(
-                      _titleFor(role, scope),
-                      style: Theme.of(context).textTheme.titleLarge,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-
-                  // Actions on the right
-                  TextButton(
-                    onPressed: () {
-                      // TODO: navigate to SCADA screen
-                      // context.go('/scada');
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('SCADA tapped')),
-                      );
-                    },
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
-                      backgroundColor: Colors.grey.shade300,
-                      minimumSize: Size.zero, // keeps it compact
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      foregroundColor: Colors.black87,
-                      textStyle: Theme.of(context).textTheme.bodySmall
-                          ?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: .3,
-                          ),
-                    ),
-                    child: const Text('SCADA'),
-                  ),
-                  const SizedBox(width: 6),
-                  TextButton(
-                    onPressed: () {
-                      // TODO: navigate to VTS screen
-                      // context.go('/vts');
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('VTS tapped')),
-                      );
-                    },
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 6,
-                      ),
-                      backgroundColor: Colors.grey.shade300,
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      foregroundColor: Colors.black87,
-                      textStyle: Theme.of(context).textTheme.bodySmall
-                          ?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: .3,
-                          ),
-                    ),
-                    child: const Text('VTS'),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            // Cards common to all roles (but values should be scoped by role/scope)
-            // _rowCards(context, [
-            //   DashboardStatCard(
-            //     icon: Icons.warning_amber_rounded,
-            //     iconBgColor: Colors.pinkAccent,
-            //     title: "Route Diversions Today",
-            //     subtitle: _scopeLabel(role, scope),
-            //     value: "0",
-            //   ),
-            //   DashboardStatCard(
-            //     icon: Icons.cancel_outlined,
-            //     iconBgColor: Colors.red,
-            //     title: "Dry-Outs Today",
-            //     subtitle: _scopeLabel(role, scope),
-            //     value: "0",
-            //   ),
-            // ]),
-            const SizedBox(height: Gsizes.defaultSpaceSmall),
-            _rowCards(context, [
-              DashboardStatCard(
-                icon: Icons.warning_amber_rounded,
-                iconBgColor: Colors.pinkAccent,
-                title: "Route Diversions Today",
-                subtitle: _scopeLabel(role, scope),
-                value: "0",
-              ),
-              DashboardStatCard(
-                icon: Icons.check_circle_outline,
-                iconBgColor: Colors.green,
-                title: "No Dry-Out Detected Today",
-                subtitle: _scopeLabel(role, scope),
-                value: "0",
-              ),
-              DashboardStatCard(
-                icon: Icons.cancel_outlined,
-                iconBgColor: Colors.orange,
-                title: "Dry-Out Detected Today",
-                subtitle: _scopeLabel(role, scope),
-                value: "0",
-              ),
-              DashboardStatCard(
-                icon: Icons.warning_amber_rounded,
-                iconBgColor: Colors.red,
-                title: "Dry-Outs Today",
-                subtitle: _scopeLabel(role, scope),
-                value: "0",
-              ),
-              DashboardStatCard(
-                icon: Icons.local_shipping_outlined,
-                iconBgColor: Colors.green,
-                title: "Today Total Idle LCVs",
-                subtitle: _scopeLabel(role, scope),
-                value: "23",
-              ),
-            ]),
-            const SizedBox(height: Gsizes.defaultSpaceSmall),
-
-            // Role specific blocks
-            ..._roleSpecificBlocks(context, role, scope),
-          ],
-        ),
-      ),
-      bottomNavigationBar: const GNavBar(current: AppTab.dashboard),
-    );
-  }
+  State<DashboardPage> createState() => _DashboardPageState();
 
   static String _titleFor(UserRole role, dynamic scope) {
     switch (role) {
@@ -381,6 +230,203 @@ class DashboardPage extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(left: 10, top: 16, bottom: 8),
       child: Text(text, style: Theme.of(context).textTheme.titleLarge),
+    );
+  }
+}
+
+class _DashboardPageState extends State<DashboardPage> {
+  final RefreshController _refreshController = RefreshController(
+    initialRefresh: false,
+  );
+
+  Future<void> _onRefresh() async {
+    // TODO: put your real refresh call(s) here
+    await Future.delayed(const Duration(milliseconds: 800));
+    _refreshController.refreshCompleted(); // end the animation
+  }
+
+  @override
+  void dispose() {
+    _refreshController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final auth = context.watch<AuthController>();
+    final role = auth.activeRole ?? UserRole.superAdmin;
+    final scope = auth.activeScope;
+
+    return Scaffold(
+      appBar: const GAppBar(
+        title: 'Dashboard',
+        // subtitle: 'Role-aware Overview',
+      ),
+      drawer: const GSidebar(),
+      body: SmartRefresher(
+        controller: _refreshController,
+        enablePullDown: true,
+        onRefresh: _onRefresh,
+        header: const ClassicHeader(
+          refreshingText: 'Refreshing…',
+          idleText: 'Pull down to refresh',
+          releaseText: 'Release to refresh',
+          completeText: 'Refresh complete',
+          failedText: 'Refresh failed',
+          // (optional) you can tweak icons/sizes if you want
+        ),
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(left: 10, right: 10),
+              child: Row(
+                children: [
+                  // Title on the left
+                  Expanded(
+                    child: Text(
+                      DashboardPage._titleFor(role, scope),
+                      style: Theme.of(context).textTheme.titleLarge,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+
+                  // Actions on the right
+                  TextButton(
+                    onPressed: () {
+                      // TODO: navigate to SCADA screen
+                      // context.go('/scada');
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('SCADA tapped')),
+                      );
+                    },
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      backgroundColor: Colors.grey.shade300,
+                      minimumSize: Size.zero, // keeps it compact
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      foregroundColor: Colors.black87,
+                      textStyle: Theme.of(context).textTheme.bodySmall
+                          ?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: .3,
+                          ),
+                    ),
+                    child: const Text('SCADA'),
+                  ),
+                  const SizedBox(width: 6),
+                  TextButton(
+                    onPressed: () {
+                      // TODO: navigate to VTS screen
+                      // context.go('/vts');
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('VTS tapped')),
+                      );
+                    },
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 6,
+                      ),
+                      backgroundColor: Colors.grey.shade300,
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      foregroundColor: Colors.black87,
+                      textStyle: Theme.of(context).textTheme.bodySmall
+                          ?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: .3,
+                          ),
+                    ),
+                    child: const Text('VTS'),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            // Cards common to all roles (but values should be scoped by role/scope)
+            // _rowCards(context, [
+            //   DashboardStatCard(
+            //     icon: Icons.warning_amber_rounded,
+            //     iconBgColor: Colors.pinkAccent,
+            //     title: "Route Diversions Today",
+            //     subtitle: _scopeLabel(role, scope),
+            //     value: "0",
+            //   ),
+            //   DashboardStatCard(
+            //     icon: Icons.cancel_outlined,
+            //     iconBgColor: Colors.red,
+            //     title: "Dry-Outs Today",
+            //     subtitle: _scopeLabel(role, scope),
+            //     value: "0",
+            //   ),
+            // ]),
+            const SizedBox(height: Gsizes.defaultSpaceSmall),
+            DashboardPage._rowCards(context, [
+              DashboardStatCard(
+                icon: Icons.warning_amber_rounded,
+                iconBgColor: Colors.pinkAccent,
+                title: "Route Diversions Today",
+                subtitle: DashboardPage._scopeLabel(role, scope),
+                value: "0",
+                onTap: () {
+                  context.push('/route_diversion');
+                },
+              ),
+              DashboardStatCard(
+                icon: Icons.check_circle_outline,
+                iconBgColor: Colors.green,
+                title: "No Dry-Out Detected Today",
+                subtitle: DashboardPage._scopeLabel(role, scope),
+                value: "0",
+                onTap: () {
+                  context.push('/no_dryout_detected_dbs');
+                },
+              ),
+              DashboardStatCard(
+                icon: Icons.cancel_outlined,
+                iconBgColor: Colors.orange,
+                title: "Dry-Out Detected Today",
+                subtitle: DashboardPage._scopeLabel(role, scope),
+                value: "0",
+                onTap: () {
+                  context.push('/dryout_today_dbs');
+                },
+              ),
+              DashboardStatCard(
+                icon: Icons.warning_amber_rounded,
+                iconBgColor: Colors.red,
+                title: "Dry-Outs Today",
+                subtitle: DashboardPage._scopeLabel(role, scope),
+                value: "0",
+                onTap: () {
+                  context.push('/dryouts_today');
+                },
+              ),
+              DashboardStatCard(
+                icon: Icons.local_shipping_outlined,
+                iconBgColor: Colors.green,
+                title: "Today Total Idle LCVs",
+                subtitle: DashboardPage._scopeLabel(role, scope),
+                value: "23",
+                onTap: () {
+                  context.push('/idle_lcv');
+                },
+              ),
+            ]),
+            const SizedBox(height: Gsizes.defaultSpaceSmall),
+
+            // Role specific blocks
+            ...DashboardPage._roleSpecificBlocks(context, role, scope),
+          ],
+        ),
+      ),
+      bottomNavigationBar: const GNavBar(current: AppTab.dashboard),
     );
   }
 }
